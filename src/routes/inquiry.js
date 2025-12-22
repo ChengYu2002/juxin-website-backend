@@ -1,10 +1,10 @@
-const router = require('express').Router();
-const { createInquiry } = require('../controllers/inquiryController');
+const router = require('express').Router()
+const { createInquiry } = require('../controllers/inquiryController')
 
-router.post('/', createInquiry);
+router.post('/', createInquiry)
 
 router.get('/', (req, res) => {
-    res.send('Inquiry endpoint is alive');
-  });
+  res.send('Inquiry endpoint is alive')
+})
 
-module.exports = router;
+module.exports = router
