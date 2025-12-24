@@ -1,14 +1,45 @@
-const express = require('express');
-const cors = require('cors');
+//src/app.js
+require('dotenv').config()
+const express = require('express')
+const cors = require('cors')
+const helmet = require('helmet')
 
-const app = express();
+const inquiryRouter = require('./routes/inquiry')
+const { inquirySpeedLimiter, inquiryLimiter } = require('./middleware/inquiryProtection')
 
-app.use(cors());
-app.use(express.json());
+const { requestLogger } = require('./middleware/requestLogger')
+const { unknownEndpoint } = require('./middleware/unknownEndpoint')
+
+const app = express()
+
+/**
+ * ✅ trust proxy
+ * 如果你以后部署到 Nginx/Cloudflare/Render/Heroku 等反向代理后面，
+ * 需要这句才能正确识别真实 IP（req.ip / x-forwarded-for）
+ */
+app.set('trust proxy', 1)
+
+// helmet：给 Express 默认把“安全门窗”关好，防一些常见的低级攻击
+app.use(helmet())
+
+app.use(cors())
+app.use(express.json())
+
+// 请求日志中间件（开发环境下启用）
+if (process.env.NODE_ENV !== 'production') {
+  app.use(requestLogger)
+}
 
 app.get('/', (req, res) => {
-    // res.send({ status: 'ok' })
-    res.send('Welcome to Juxin Website Backend!')
-  })
+  // res.send({ status: 'ok' })
+  res.send('Welcome to Juxin Website Backend!')
+})
+
+// 应用限速中间件到 /api/inquiry 路由
+// 也可以放在router/inquiry.js里模块化
+app.use('/api/inquiry', inquirySpeedLimiter, inquiryLimiter, inquiryRouter)
+
+// 404 处理中间件（必须放在所有路由之后）: unknown endpoint
+app.use(unknownEndpoint)
 
 module.exports = app
