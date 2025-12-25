@@ -42,10 +42,10 @@ This V1 focuses on powering a secure inquiry workflow: validating and de-duplica
 
 - Unknown endpoint handling (`404`)
 - Centralized error handler with proper status codes:
-  - `CastError` (malformatted ObjectId)
-  - `ValidationError`
-  - MongoDB duplicate key (`11000`)
-  - `500` fallback
+    - `CastError` (malformatted ObjectId)
+    - `ValidationError`
+    - MongoDB duplicate key (`11000`)
+    - `500` fallback
 - Request logging middleware
 
 ---
@@ -53,83 +53,3 @@ This V1 focuses on powering a secure inquiry workflow: validating and de-duplica
 ## Environment Variables
 
 Create a `.env` file in the project root:
-
-```bash
-PORT=3001
-NODE_ENV=development
-
-# MongoDB
-MONGODB_URI="mongodb+srv://..."
-
-# Admin token (protects GET / DELETE)
-ADMIN_TOKEN="your-strong-admin-token"
-
-# Email (SMTP)
-SMTP_HOST="smtp.qq.com"
-SMTP_PORT=465
-SMTP_SECURE=true
-SMTP_USER="xxx@qq.com"
-SMTP_PASS="your_smtp_app_password"
-
-MAIL_TO="sale01@cn-jason.net"
-MAIL_FROM="sale01@cn-jason.net"
-
-# Logging
-LOG_LEVEL=info
-Note: Never commit .env to Git.
-
-## API Endpoints
-
-### Public
-
-#### `POST /api/inquiry`
-
-Creates a new inquiry.
-
-- Validates payload
-- Applies anti-spam protections
-- Stores inquiry in MongoDB
-- Sends notification email
-
-**Example request body:**
-
-```json
-{
-  "name": "Buyer Name",
-  "email": "buyer@example.com",
-  "message": "Hello, I’m interested in JX-80SP..."
-}
-
-**Admin (Token Required)**
-Admin token must be provided via HTTP header:
-Authorization: Bearer <ADMIN_TOKEN>
-
-GET /api/inquiry
-Returns all inquiries (admin only)
-
-DELETE /api/inquiry/:id
-Deletes a specific inquiry by MongoDB ObjectId (admin only).
-
-**Project Structure**
-src/
-  config/
-  controllers/
-  middleware/
-  models/
-  routes/
-  services/
-  utils/
-tests/
-.env
-.gitignore
-
-**Getting Started**
-***Install dependencies***
-npm install
-
-***Run (development)***
-npm run dev
-
-***Lint***
-npm run lint
-npm run lint:fix
