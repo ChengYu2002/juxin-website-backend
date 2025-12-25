@@ -1,7 +1,6 @@
 // src/services/mailer.js (CommonJS)
 // 作用：把“发邮件”这件事封装成一个函数，controller 里只调用即可。
 // 好处：业务逻辑（controller）不会被 SMTP 配置细节污染。
-
 const nodemailer = require('nodemailer')
 
 // transporter = “邮局通道”
