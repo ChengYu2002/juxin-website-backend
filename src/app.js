@@ -4,8 +4,6 @@ const cors = require('cors')
 const helmet = require('helmet')
 
 const inquiryRouter = require('./routes/inquiry')
-const { inquirySpeedLimiter, inquiryLimiter } = require('./middleware/inquiryProtection')
-
 const { requestLogger } = require('./middleware/requestLogger')
 const { unknownEndpoint } = require('./middleware/unknownEndpoint')
 const { errorHandler } = require('./middleware/errorHandler')
@@ -37,7 +35,7 @@ if (process.env.NODE_ENV !== 'production') {
 
 // 应用限速中间件到 /api/inquiry 路由
 // 也可以放在router/inquiry.js里模块化
-app.use('/api/inquiry', inquirySpeedLimiter, inquiryLimiter, inquiryRouter)
+app.use('/api/inquiry', inquiryRouter)
 
 // 404 处理中间件: unknown endpoint
 app.use(unknownEndpoint)
