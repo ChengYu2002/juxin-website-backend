@@ -26,9 +26,9 @@ const inquirySchema = new mongoose.Schema(
       required: true
     },
     emailed: {
-      type: Boolean,
-      default: false,
-      required: true
+      type: String,
+      default: 'pending',
+      enum: ['pending', 'sent', 'failed'],
     },
     country: { type: String, maxLength: 80 },
     region: { type: String, maxLength: 120 },

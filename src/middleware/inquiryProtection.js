@@ -22,7 +22,7 @@ const inquirySpeedLimiter = slowDown({
 */
 const inquiryLimiter = rateLimit({
   windowMs: 10 * 60 * 1000, // 10 minutes
-  limit: 10,                // limit each IP to 10 requests per windowMs
+  limit: 5,                // limit each IP to 5 requests per windowMs
   standardHeaders: true,    // Return rate limit info in the `RateLimit-*` headers “我按现代规范说话”
   legacyHeaders: false,     // Disable the `X-RateLimit-*` headers “我不再照顾老旧客户端”
   message: {

@@ -2,10 +2,12 @@
 // 作用：inquiry 相关路由
 
 const router = require('express').Router()
+const { inquirySpeedLimiter, inquiryLimiter }  = require('../middleware/inquiryProtection')
 const { createInquiry, getAllInquiries, deleteInquiry } = require('../controllers/inquiryController')
 const { validateInquiry, dedupeInquiry } = require('../middleware/inquiryValidation')
 const { getClientMeta } = require('../utils/clientMeta')
 const { adminToken } = require('../middleware/adminToken')
+
 
 // 中间件：附加客户端元信息到请求对象
 const attachClientMeta = (req, _res, next) => {
@@ -16,6 +18,8 @@ const attachClientMeta = (req, _res, next) => {
 // 创建新的 inquiry
 // 公开路由，无需管理员 Token
 router.post('/',
+  inquirySpeedLimiter,
+  inquiryLimiter,
   attachClientMeta,
   validateInquiry,  // 校验请求数据
   dedupeInquiry,    // 防重复提交

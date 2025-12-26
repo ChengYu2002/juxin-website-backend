@@ -87,12 +87,12 @@ function validateInquiry(req, res, next) {
    */
 function dedupeInquiry(req, res, next) {
   const { ip } = req.clientMeta            // 来自 getClientMeta middleware
-  const { email, message } = req.inquiryValidated
+  const { name, email, message } = req.inquiryValidated
 
   const now = Date.now()
   cleanupOld(now)
 
-  const key = `${ip}||${email}||${message}`
+  const key = `${ip}||${name}||${email}||${message}`
 
   // 5 分钟内相同内容，直接拒绝
   if (recent.has(key)) {
