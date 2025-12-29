@@ -25,6 +25,9 @@ if (process.env.NODE_ENV !== 'production') {
   // 后续版本可以用白名单形式的 cors 配置
 }
 
+// 静态文件中间件，托管前端打包后的静态资源
+app.use(express.static('dist'))
+
 // json 解析中间件
 app.use(express.json({ limit: '20kb' })) // 限制请求体大小，防止大包打爆内存
 
