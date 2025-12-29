@@ -9,7 +9,7 @@ const { unknownEndpoint } = require('./middleware/unknownEndpoint')
 const { errorHandler } = require('./middleware/errorHandler')
 
 const app = express()
-const path = require('path')
+// const path = require('path')
 /**
  * ✅ trust proxy
  * 如果以后部署到 Nginx/Cloudflare/Render/Heroku 等反向代理后面，
@@ -26,7 +26,7 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // 静态文件中间件，托管前端打包后的静态资源
-app.use(express.static(path.join(__dirname, '../public')))
+app.use(express.static('dist'))
 
 // json 解析中间件
 app.use(express.json({ limit: '20kb' })) // 限制请求体大小，防止大包打爆内存
@@ -40,12 +40,12 @@ if (process.env.NODE_ENV !== 'production') {
 // 也可以放在router/inquiry.js里模块化
 app.use('/api/inquiry', inquiryRouter)
 
-// SPA fallback：让 React Router 的前端路由都回到 index.html
-app.get('*', (req, res, next) => {
-  // 让 API 请求继续走后端（更保险）
-  if (req.path.startsWith('/api/')) return next()
-  res.sendFile(path.join(__dirname, '../public/index.html'))
-})
+// // SPA fallback：让 React Router 的前端路由都回到 index.html
+// app.get('*', (req, res, next) => {
+//   // 让 API 请求继续走后端（更保险）
+//   if (req.path.startsWith('/api/')) return next()
+//   res.sendFile(path.join(__dirname, '../public/index.html'))
+// })
 
 // 404 处理中间件: unknown endpoint
 app.use(unknownEndpoint)
