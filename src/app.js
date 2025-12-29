@@ -9,7 +9,7 @@ const { unknownEndpoint } = require('./middleware/unknownEndpoint')
 const { errorHandler } = require('./middleware/errorHandler')
 
 const app = express()
-
+// const path = require('path')
 /**
  * ✅ trust proxy
  * 如果以后部署到 Nginx/Cloudflare/Render/Heroku 等反向代理后面，
@@ -39,6 +39,13 @@ if (process.env.NODE_ENV !== 'production') {
 // 应用限速中间件到 /api/inquiry 路由
 // 也可以放在router/inquiry.js里模块化
 app.use('/api/inquiry', inquiryRouter)
+
+// // SPA fallback：让 React Router 的前端路由都回到 index.html
+// app.get('*', (req, res, next) => {
+//   // 让 API 请求继续走后端（更保险）
+//   if (req.path.startsWith('/api/')) return next()
+//   res.sendFile(path.join(__dirname, '../public/index.html'))
+// })
 
 // 404 处理中间件: unknown endpoint
 app.use(unknownEndpoint)
