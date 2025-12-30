@@ -13,6 +13,9 @@ const transporter = nodemailer.createTransport({
     user: process.env.SMTP_USER,                // 发件账号（一般就是公司邮箱）
     pass: process.env.SMTP_PASS,                // SMTP 授权码
   },
+  connectionTimeout: 20_000,
+  greetingTimeout: 20_000,
+  socketTimeout: 20_000,
 })
 
 async function sendInquiryMail(payload) {
