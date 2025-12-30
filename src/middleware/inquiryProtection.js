@@ -3,6 +3,7 @@
 // 路由级防刷：slowDown + rateLimit（只对 /api/inquiry 生效）
 const rateLimit = require('express-rate-limit')
 const slowDown = require('express-slow-down')
+const MongoStore = require('rate-limit-mongo')
 
 /**
  * ✅ slowDown（减速）
@@ -22,13 +23,30 @@ const inquirySpeedLimiter = slowDown({
 */
 const inquiryLimiter = rateLimit({
   windowMs: 10 * 60 * 1000, // 10 minutes
-  limit: 5,                // limit each IP to 5 requests per windowMs
-  standardHeaders: true,    // Return rate limit info in the `RateLimit-*` headers “我按现代规范说话”
-  legacyHeaders: false,     // Disable the `X-RateLimit-*` headers “我不再照顾老旧客户端”
+  limit: 5,                 // limit each IP to 5 requests per windowMs
+  standardHeaders: true,    
+  legacyHeaders: false,
+
+  // 使用 MongoDB 作为限流数据存储
+  store: new MongoStore({
+    uri: process.env.MONGODB_URI,
+    collectionName: 'rateLimits',
+    expireTimeMs: 10 * 60 * 1000,
+  }),
+
+  // 自定义 key 生成器，优先使用 x-forwarded-for 头部
+  keyGenerator: (req) => {
+    const xff = req.headers['x-forwarded-for']
+    if (typeof xff === 'string' && xff.length > 0) {
+      return xff.split(',')[0].trim()
+    }
+    return req.ip
+  },
+
   message: {
     ok: false,
-    error: 'Too many inquiries created from this IP, please try again later.'
-  }
+    error: 'Too many inquiries created from this IP, please try again later.',
+  },
 })
 
 module.exports = { inquirySpeedLimiter, inquiryLimiter }
