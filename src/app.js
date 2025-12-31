@@ -4,6 +4,7 @@ const cors = require('cors')
 const helmet = require('helmet')
 
 const inquiryRouter = require('./routes/inquiry')
+const adminAuthRouter = require('./routes/adminAuth')
 const { requestLogger } = require('./middleware/requestLogger')
 const { unknownEndpoint } = require('./middleware/unknownEndpoint')
 const { errorHandler } = require('./middleware/errorHandler')
@@ -35,6 +36,9 @@ app.use(express.json({ limit: '20kb' })) // 限制请求体大小，防止大包
 if (process.env.NODE_ENV !== 'production') {
   app.use(requestLogger)
 }
+
+// 管理员认证路由
+app.use('/api/admin', adminAuthRouter)
 
 // 应用限速中间件到 /api/inquiry 路由
 // 也可以放在router/inquiry.js里模块化

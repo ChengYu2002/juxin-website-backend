@@ -89,7 +89,7 @@ async function sendInquiryMail(payload) {
       : 'Mailer using SMTP'
   )
 
-  
+
   // 优先走 Resend（云环境稳定）
   if (resendClient) {
     return sendViaResend(payload)

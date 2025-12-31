@@ -6,7 +6,7 @@ const { inquirySpeedLimiter, inquiryLimiter }  = require('../middleware/inquiryP
 const { createInquiry, getAllInquiries, deleteInquiry } = require('../controllers/inquiryController')
 const { validateInquiry, dedupeInquiry } = require('../middleware/inquiryValidation')
 const { getClientMeta } = require('../utils/clientMeta')
-const { adminToken } = require('../middleware/adminToken')
+const { requireAdmin } = require('../middleware/requireAdmin')
 
 
 // 中间件：附加客户端元信息到请求对象
@@ -29,9 +29,9 @@ router.post('/',
 // 以下路由均需管理员 Token 验证
 
 // 获取所有 inquiry
-router.get('/', adminToken, getAllInquiries)
+router.get('/', requireAdmin, getAllInquiries)
 
 // 删除指定 ID 的 inquiry
-router.delete('/:id', adminToken, deleteInquiry)
+router.delete('/:id', requireAdmin, deleteInquiry)
 
 module.exports = router
