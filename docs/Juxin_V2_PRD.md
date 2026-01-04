@@ -63,14 +63,46 @@ V1 已完成：
 
 ```ts
 Product {
-  id
-  name
-  category
-  description
-  images: string[]
-  isActive
-  createdAt
-  updatedAt
+  id: string                // 系统唯一标识（后端生成）
+  model: string             // 产品型号（如 JX-25ZP，业务唯一）
+  slug: string              // URL 标识（用于前台路由）
+
+  name: string              // 产品名称
+  category: string          // 产品分类
+  moq?: number              // 最小起订量（可选）
+
+  variants: Variant[]       // 产品变体（颜色/款式）
+  specs?: ProductSpecs      // 产品规格信息（展示用）
+
+  isActive: boolean         // 是否上架
+  sortOrder?: number        // 排序权重（数值越大越靠前）
+
+  isPopular?: boolean       // 是否推荐产品（运营字段）
+  profitMargin?: 'low' | 'mid' | 'high'  // 利润等级（内部使用）
+
+  createdAt: datetime
+  updatedAt: datetime
+}
+
+Variant {
+  key: string               // 变体唯一标识（如 black）
+  label: string             // 展示名称（如 Black）
+  images: string[]          // 该变体对应的图片集合
+}
+
+ProductSpecs {
+  maxSize?: string
+  foldedSize?: string
+  cartonSize?: string
+  pcsPerCarton?: number
+  netWeightKg?: number
+  grossWeightKg?: number
+  wheelSizeMm?: number
+  containerLoad?: {
+    '20GP'?: number
+    '40GP'?: number
+    '40HQ'?: number
+  }
 }
 ```
 
