@@ -1,0 +1,124 @@
+// controllers/productController.js
+// 作用：处理 product 的业务逻辑：返回结果、数据操作、CRUD。
+const Product = require('../models/product')
+
+
+// 获取所有产品，支持按 category 和 isActive 过滤
+// GET /api/products?category=shopping-trolley&isActive=true
+const getProducts = async (req, res, next) => {
+  try {
+		const { category, isActive } = req.query
+		const filter = {}
+
+		if (isActive !== undefined) {
+			filter.isActive = isActive === 'true'
+		} else {
+			// 默认只返回上架的产品
+			filter.isActive = true
+		}
+
+		if (category) {
+			filter.category = category
+		}
+
+		const products = await Product.find(filter).sort({ sortOrder: -1, createdAt: -1 })
+		res.json(products)
+
+  } catch (error) {
+    next(error)
+  }
+}
+
+// 获取单个产品详情
+// GET /api/products/:idorSlug
+const getProductByIdorSlug = async (req, res, next) => {
+	try {
+		// 从 URL 参数中获取 id 或 slug, {}: 解构赋值重命名
+		const { idorSlug }  = req.params
+
+		// 先按业务 id 查（JX-25ZP）
+		let product = await Product.findOne({ id: idorSlug })
+		// 如果没找到，再按 slug 查（jx-25zp）
+		if (!product) {
+			product = await Product.findOne({ slug: idorSlug })
+		}
+		// 仍然没找到，返回 404
+		if (!product) {
+			return res.status(404).json({ ok: false, error: 'Product not found' })
+		}
+
+		res.json(product)
+	} catch (error) {
+		next(error)
+	}
+}	
+
+// 新建产品（管理员用）
+// POST /api/products (admin only)
+const createProduct = async (req, res, next) => {
+	try {
+		const productData = req.body
+		const created = await Product.create(productData)
+		res.status(201).json(created)
+
+	} catch (error) {
+		// slug/id unique 冲突常见：E11000 duplicate key
+		if (error && error.code === 11000) {
+			return res.status(409).json({ ok: false, error: 'Product id or slug already exists' })
+		}
+
+		next(error)
+	}
+}
+
+// 更新产品（管理员用）
+// PUT /api/products/:id (admin only)
+const updateProduct = async (req, res, next) => {
+	try {
+		const { id } = req.params
+		const body = req.body
+
+		const updated = await Product.findOneAndUpdate(
+			{ id }, // 查询条件
+			body,   // 更新内容
+			{ new: true, runValidators: true } // 选项：返回更新后的文档，运行验证
+		)
+
+		if (!updated) {
+			return res.status(404).json({ ok: false, error: 'Product not found' })
+		}
+		res.json(updated)
+	} catch (error) {
+		// slug/id unique 冲突常见：E11000 duplicate key
+		if (error && error.code === 11000) {
+			return res.status(409).json({ ok: false, error: 'Product id or slug already exists' })
+		}
+
+		next(error)
+	}
+}
+
+// 删除产品（管理员用）
+const deleteProduct = async (req, res, next) => {
+	try {
+		const { id } = req.params
+		const deleted = await Product.findOneAndDelete({ id })
+
+		if (!deleted) {
+			return res.status(404).json({ ok: false, error: 'Product not found' })
+		}
+
+		res.status(204).end()
+
+	} catch (error) {
+		next(error)
+	}
+}
+
+module.exports = {
+	getProducts,
+	getProductByIdorSlug,
+	createProduct,
+	updateProduct,
+	deleteProduct
+}

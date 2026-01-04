@@ -6,6 +6,7 @@ const helmet = require('helmet')
 
 const inquiryRouter = require('./routes/inquiry')
 const adminAuthRouter = require('./routes/adminAuth')
+const productsRouter = require('./routes/products')
 const { requestLogger } = require('./middleware/requestLogger')
 const { unknownEndpoint } = require('./middleware/unknownEndpoint')
 const { errorHandler } = require('./middleware/errorHandler')
@@ -44,6 +45,9 @@ app.use('/api/admin', adminAuthRouter)
 // 应用限速中间件到 /api/inquiry 路由
 // 也可以放在router/inquiry.js里模块化
 app.use('/api/inquiry', inquiryRouter)
+
+// 产品路由
+app.use('/api/products', productsRouter)
 
 // // 托管前端静态文件（Vite 默认 dist）
 // const clientDistPath = path.join(__dirname, 'dist') // 如果 dist 不在这里，改成正确路径
