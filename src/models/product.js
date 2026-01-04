@@ -97,7 +97,12 @@ const productSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
-      maxLength: 100,
+      enum: [
+        'shopping-trolley',
+        'utility-trolley',
+        'camping-wagon',
+        'outdoor-furniture'
+      ],
       index: true
     },
 
