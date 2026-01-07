@@ -42,9 +42,9 @@ if (process.env.NODE_ENV !== 'production') {
 // 管理员认证路由
 app.use('/api/admin', adminAuthRouter)
 
-// 应用限速中间件到 /api/inquiry 路由
-// 也可以放在router/inquiry.js里模块化
-app.use('/api/inquiry', inquiryRouter)
+// 应用限速中间件到 /api/inquiries 路由
+// 也可以放在router/inquiries.js里模块化
+app.use('/api/inquiries', inquiryRouter)
 
 // 产品路由
 app.use('/api/products', productsRouter)

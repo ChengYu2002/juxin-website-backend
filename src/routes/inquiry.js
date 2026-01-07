@@ -3,7 +3,7 @@
 
 const router = require('express').Router()
 const { inquirySpeedLimiter, inquiryLimiter }  = require('../middleware/inquiryProtection')
-const { createInquiry, getAllInquiries, deleteInquiry } = require('../controllers/inquiryController')
+const { createInquiry, getAllInquiries, deleteInquiry, updateInquiry } = require('../controllers/inquiryController')
 const { validateInquiry, dedupeInquiry } = require('../middleware/inquiryValidation')
 const { getClientMeta } = require('../utils/clientMeta')
 const { requireAdmin } = require('../middleware/requireAdmin')
@@ -29,9 +29,12 @@ router.post('/',
 // 以下路由均需管理员 Token 验证
 
 // 获取所有 inquiry
-router.get('/', requireAdmin, getAllInquiries)
+router.get('/admin/', requireAdmin, getAllInquiries)
 
 // 删除指定 ID 的 inquiry
-router.delete('/:id', requireAdmin, deleteInquiry)
+router.delete('/admin/:id', requireAdmin, deleteInquiry)
+
+// 修改指定 ID 的 inquiry
+/router.put('/admin/:id', requireAdmin, updateInquiry)
 
 module.exports = router
