@@ -3,13 +3,17 @@ const productsRouter = require('express').Router()
 const productController = require('../controllers/productController')
 const { requireAdmin } = require('../middleware/requireAdmin')
 
-// public
-productsRouter.get('/', productController.getProducts)
-productsRouter.get('/:idorSlug', productController.getProductByIdorSlug)
 
-// admin only
-productsRouter.post('/', requireAdmin, productController.createProduct)
-productsRouter.put('/:id', requireAdmin, productController.updateProduct)
-productsRouter.delete('/:id', requireAdmin, productController.deleteProduct)
+// ===== ADMIN =====
+// ⚠️ 必须在 /:idorSlug 之前
+productsRouter.get('/admin', requireAdmin, productController.getAdminProducts)
+productsRouter.get('/admin/:idorSlug', requireAdmin, productController.getAmdinProductByIdorSlug)
+productsRouter.post('/admin', requireAdmin, productController.createProduct)
+productsRouter.put('/admin/:id', requireAdmin, productController.updateProduct)
+productsRouter.delete('/admin/:id', requireAdmin, productController.deleteProduct)
+
+// ===== PUBLIC =====
+productsRouter.get('/', productController.getPublicProducts)
+productsRouter.get('/:idorSlug', productController.getPublicProductByIdorSlug)
 
 module.exports = productsRouter
