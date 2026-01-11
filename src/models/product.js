@@ -16,6 +16,7 @@ const variantSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
+      lowercase: true,
       maxLength: 100
     },
 
@@ -52,7 +53,7 @@ const specsSchema = new mongoose.Schema(
     foldedSize: { type: String, trim: true },
     cartonSize: { type: String, trim: true },
 
-    pcsPerCarton: { type: Number, min: 0 },
+    pcsPerCarton: { type: Number, min: 0, default: 0 },
 
     // p0先string表示，后续可改为number做计算
     netWeight: { type: String, trim: true }, // eg. "17.5 kg"
@@ -72,6 +73,7 @@ const productSchema = new mongoose.Schema(
       required: true,
       unique: true,
       trim: true,
+      lowercase: true,
       maxLength: 100,
       index: true // 为id字段创建索引页面，提升查询性能
     },
@@ -83,15 +85,16 @@ const productSchema = new mongoose.Schema(
       maxLength: 100
     },
 
-    // 前台路由/SEO 友好字段
+    // 前台路由/SEO 友好字段 - 可选
+    /*
     slug: {
       type: String,
-      required: true,
-      unique: true,
+      sparse: true,
       trim: true,
-      maxLength: 120,
-      index: true
+      set: (v) => (v ? v : undefined)
     },
+    */
+
 
     category: {
       type: String,
@@ -110,10 +113,10 @@ const productSchema = new mongoose.Schema(
     moq: { type: Number, default: 0, min: 0 },
 
     // 变体数组 颜色，款式
-    variants: { type: [variantSchema], default: undefined },
+    variants: { type: [variantSchema], default: [] },
 
     // 规格
-    specs: { type: specsSchema, default: {} },
+    specs: { type: specsSchema, default: () => ({}) },
 
     // 推荐部分 (运营字段)
     isPopular: { type: Boolean, default: false, index: true },

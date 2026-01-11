@@ -122,8 +122,16 @@ const createProduct = async (req, res, next) => {
 
   } catch (error) {
     // slug/id unique 冲突常见：E11000 duplicate key
-    if (error && error.code === 11000) {
-      return res.status(409).json({ ok: false, error: 'Product id or slug already exists' })
+    if (error?.code === 11000) {
+      const field = Object.keys(error.keyPattern || {})[0]
+      const value = error.keyValue?.[field]
+
+      return res.status(409).json({
+        ok: false,
+        field,
+        value,
+        error: `${field} already exists`
+      })
     }
 
     next(error)
