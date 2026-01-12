@@ -32,6 +32,13 @@ const inquirySchema = new mongoose.Schema(
     },
     country: { type: String, maxLength: 80 },
     region: { type: String, maxLength: 120 },
+
+    // 询盘处理状态：new / done
+    status: {
+      type: String,
+      enum: ['new', 'done'],
+      default: 'new',
+    },
   },
   { timestamps: true }
 )

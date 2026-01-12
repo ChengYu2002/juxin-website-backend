@@ -17,6 +17,7 @@ const Inquiry = require('../models/inquiry')
 
 
 // 创建新的 inquiry
+// POST /api/inquiries
 async function createInquiry(req, res, next) {
   try {
     const { name, email, message } = req.body
@@ -98,6 +99,7 @@ async function createInquiry(req, res, next) {
 }
 
 // 获取所有 inquiry 列表（管理员用）
+// GET /api/inquiries/admin
 async function getAllInquiries(req, res, next) {
   try {
     // 按创建时间倒序返回
@@ -112,6 +114,7 @@ async function getAllInquiries(req, res, next) {
 }
 
 // 删除某个 inquiry（管理员用）
+// DELETE /api/inquiries/admin/:id
 async function deleteInquiry(req, res, next) {
   try {
     const inquiryId = req.params.id
@@ -126,4 +129,32 @@ async function deleteInquiry(req, res, next) {
   }
 }
 
-module.exports = { createInquiry, getAllInquiries, deleteInquiry }
+// 修改某个 inquiry（管理员用）
+// 当前只支持修改 status 字段
+// PUT /api/inquiries/admin/:id
+async function updateInquiry(req, res, next) {
+  try {
+    const inquiryId = req.params.id
+    const { status } = req.body
+
+    if (!['new', 'done'].includes(status)) {
+      return res.status(400).json({ ok: false, error: 'invalid status' })
+    }
+
+    const updated = await Inquiry.findByIdAndUpdate(
+      inquiryId,
+      { status },
+      { new: true, runValidators: true }
+    )
+
+    if (!updated) {
+      return res.status(404).json({ ok: false, error: 'inquiry not found' })
+    }
+
+    res.json(updated)
+  } catch (err) {
+    return next(err)
+  }
+}
+
+module.exports = { createInquiry, getAllInquiries, deleteInquiry, updateInquiry }

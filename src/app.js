@@ -1,9 +1,12 @@
 //src/app.js
+// const path = require('path')
 const express = require('express')
 const cors = require('cors')
 const helmet = require('helmet')
 
 const inquiryRouter = require('./routes/inquiry')
+const adminAuthRouter = require('./routes/adminAuth')
+const productsRouter = require('./routes/products')
 const { requestLogger } = require('./middleware/requestLogger')
 const { unknownEndpoint } = require('./middleware/unknownEndpoint')
 const { errorHandler } = require('./middleware/errorHandler')
@@ -36,15 +39,23 @@ if (process.env.NODE_ENV !== 'production') {
   app.use(requestLogger)
 }
 
-// 应用限速中间件到 /api/inquiry 路由
-// 也可以放在router/inquiry.js里模块化
-app.use('/api/inquiry', inquiryRouter)
+// 管理员认证路由
+app.use('/api/admin', adminAuthRouter)
 
-// // SPA fallback：让 React Router 的前端路由都回到 index.html
-// app.get('*', (req, res, next) => {
-//   // 让 API 请求继续走后端（更保险）
-//   if (req.path.startsWith('/api/')) return next()
-//   res.sendFile(path.join(__dirname, '../public/index.html'))
+// 应用限速中间件到 /api/inquiries 路由
+// 也可以放在router/inquiries.js里模块化
+app.use('/api/inquiries', inquiryRouter)
+
+// 产品路由
+app.use('/api/products', productsRouter)
+
+// // 托管前端静态文件（Vite 默认 dist）
+// const clientDistPath = path.join(__dirname, 'dist') // 如果 dist 不在这里，改成正确路径
+// app.use(express.static(clientDistPath))
+
+// // SPA 兜底：非 /api 的请求都交给前端路由
+// app.get(/^\/(?!api).*/, (req, res) => {
+//   res.sendFile(path.join(clientDistPath, 'index.html'))
 // })
 
 // 404 处理中间件: unknown endpoint

@@ -23,8 +23,8 @@ const inquirySpeedLimiter = slowDown({
 */
 const inquiryLimiter = rateLimit({
   windowMs: 10 * 60 * 1000, // 10 minutes
-  limit: 5,                 // limit each IP to 5 requests per windowMs
-  standardHeaders: true,    
+  limit: 5,                 // limit each IP to this time requests per windowMs
+  standardHeaders: true,
   legacyHeaders: false,
 
   // 使用 MongoDB 作为限流数据存储
