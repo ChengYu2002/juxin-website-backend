@@ -1,5 +1,5 @@
 //src/app.js
-// const path = require('path')
+const path = require('path')
 const express = require('express')
 const cors = require('cors')
 const helmet = require('helmet')
@@ -28,9 +28,6 @@ if (process.env.NODE_ENV !== 'production') {
   // 后续版本可以用白名单形式的 cors 配置
 }
 
-// 静态文件中间件，托管前端打包后的静态资源
-app.use(express.static('dist'))
-
 // json 解析中间件
 app.use(express.json({ limit: '20kb' })) // 限制请求体大小，防止大包打爆内存
 
@@ -49,14 +46,16 @@ app.use('/api/inquiries', inquiryRouter)
 // 产品路由
 app.use('/api/products', productsRouter)
 
-// // 托管前端静态文件（Vite 默认 dist）
-// const clientDistPath = path.join(__dirname, 'dist') // 如果 dist 不在这里，改成正确路径
-// app.use(express.static(clientDistPath))
+// 静态文件中间件，托管前端打包后的静态资源
+// ✅ 用绝对路径更稳：因为 app.js 在 src/，dist 通常在项目根目录
+const clientDistPath = path.resolve(__dirname, '..', 'dist')
+app.use(express.static(clientDistPath))
 
-// // SPA 兜底：非 /api 的请求都交给前端路由
-// app.get(/^\/(?!api).*/, (req, res) => {
-//   res.sendFile(path.join(clientDistPath, 'index.html'))
-// })
+// ✅ SPA 兜底：非 /api 的请求都交给前端路由
+// 这样 /admin、/products、/contact 等前端路由都会返回 dist/index.html
+app.get(/^\/(?!api).*/, (req, res) => {
+  res.sendFile(path.join(clientDistPath, 'index.html'))
+})
 
 // 404 处理中间件: unknown endpoint
 app.use(unknownEndpoint)
