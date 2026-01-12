@@ -17,7 +17,8 @@ const variantSchema = new mongoose.Schema(
       required: true,
       trim: true,
       lowercase: true,
-      maxLength: 100
+      maxLength: 100,
+      match: /^[a-z0-9]+(?:[-_][a-z0-9]+)*$/, 
     },
 
     label: {
@@ -75,7 +76,8 @@ const productSchema = new mongoose.Schema(
       trim: true,
       lowercase: true,
       maxLength: 100,
-      index: true // 为id字段创建索引页面，提升查询性能
+      index: true, // 为id字段创建索引页面，提升查询性能
+      match: /^[a-z0-9]+(?:[-_][a-z0-9]+)*$/, 
     },
 
     name: {
