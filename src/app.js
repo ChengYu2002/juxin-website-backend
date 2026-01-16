@@ -7,6 +7,7 @@ const helmet = require('helmet')
 const inquiryRouter = require('./routes/inquiry')
 const adminAuthRouter = require('./routes/adminAuth')
 const productsRouter = require('./routes/products')
+const uploadsRouter = require('./routes/uploads')
 const { requestLogger } = require('./middleware/requestLogger')
 const { unknownEndpoint } = require('./middleware/unknownEndpoint')
 const { errorHandler } = require('./middleware/errorHandler')
@@ -21,7 +22,22 @@ const app = express()
 app.set('trust proxy', 1)
 
 // helmet：给 Express 默认把“安全门窗”关好，防一些常见的低级攻击
-app.use(helmet())
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      useDefaults: true,
+      directives: {
+        // 👇 关键就在这里
+        "img-src": [
+          "'self'",
+          "data:",
+          "blob:",
+          "https://juxin-images-cn.oss-cn-hangzhou.aliyuncs.com",
+        ],
+      },
+    },
+  })
+)
 
 if (process.env.NODE_ENV !== 'production') {
   app.use(cors()) // 仅开发联调用
@@ -38,6 +54,9 @@ if (process.env.NODE_ENV !== 'production') {
 
 // 管理员认证路由
 app.use('/api/admin', adminAuthRouter)
+
+// 上传路由
+app.use('/api/admin/uploads', uploadsRouter)
 
 // 应用限速中间件到 /api/inquiries 路由
 // 也可以放在router/inquiries.js里模块化
