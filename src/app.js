@@ -22,7 +22,22 @@ const app = express()
 app.set('trust proxy', 1)
 
 // helmet：给 Express 默认把“安全门窗”关好，防一些常见的低级攻击
-app.use(helmet())
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      useDefaults: true,
+      directives: {
+        // 👇 关键就在这里
+        "img-src": [
+          "'self'",
+          "data:",
+          "blob:",
+          "https://juxin-images-cn.oss-cn-hangzhou.aliyuncs.com",
+        ],
+      },
+    },
+  })
+)
 
 if (process.env.NODE_ENV !== 'production') {
   app.use(cors()) // 仅开发联调用
