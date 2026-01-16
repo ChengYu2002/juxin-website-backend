@@ -7,6 +7,7 @@ const helmet = require('helmet')
 const inquiryRouter = require('./routes/inquiry')
 const adminAuthRouter = require('./routes/adminAuth')
 const productsRouter = require('./routes/products')
+const uploadsRouter = require('./routes/uploads')
 const { requestLogger } = require('./middleware/requestLogger')
 const { unknownEndpoint } = require('./middleware/unknownEndpoint')
 const { errorHandler } = require('./middleware/errorHandler')
@@ -38,6 +39,9 @@ if (process.env.NODE_ENV !== 'production') {
 
 // 管理员认证路由
 app.use('/api/admin', adminAuthRouter)
+
+// 上传路由
+app.use('/api/admin/uploads', uploadsRouter)
 
 // 应用限速中间件到 /api/inquiries 路由
 // 也可以放在router/inquiries.js里模块化
