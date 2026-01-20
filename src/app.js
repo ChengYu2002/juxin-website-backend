@@ -28,11 +28,11 @@ app.use(
       useDefaults: true,
       directives: {
         // 👇 关键就在这里
-        "img-src": [
-          "'self'",
-          "data:",
-          "blob:",
-          "https://juxin-images-cn.oss-cn-hangzhou.aliyuncs.com",
+        'img-src': [
+          '\'self\'',
+          'data:',
+          'blob:',
+          'https://juxin-images-cn.oss-cn-hangzhou.aliyuncs.com',
         ],
       },
     },
