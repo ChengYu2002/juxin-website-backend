@@ -24,5 +24,11 @@ router.post(
   uploadController.uploadImages
 )
 
+router.delete(
+  '/images',
+  requireAdmin,
+  uploadController.deleteImage
+)
+
 module.exports = router
 
