@@ -1,7 +1,7 @@
 // src/controllers/uploadController.js
 const crypto = require('crypto')
 const logger = require('../utils/logger')
-const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3')
+const { S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3')
 
 const OSS_REGION = process.env.OSS_REGION || 'cn-hangzhou'
 const OSS_BUCKET = process.env.OSS_BUCKET
@@ -53,6 +53,28 @@ function buildPublicUrl(key) {
   return `${ep}/${OSS_BUCKET}/${key}`
 }
 
+// 从公开 URL 解析出对象 key
+function keyFromUrl(imageUrl) {
+  const u = new URL(imageUrl)
+  return decodeURIComponent(u.pathname.replace(/^\/+/, ''))
+}
+
+async function deleteFromOSS(key) {
+  if (!key) return
+
+  // 安全护栏：只允许删 products/ 目录
+  if (!key.startsWith('products/')) {
+    const err = new Error('Invalid key prefix')
+    err.status = 400
+    throw err
+  }
+
+  await oss.send(new DeleteObjectCommand({
+    Bucket: OSS_BUCKET,
+    Key: key,
+  }))
+}
+
 
 exports.uploadImages = async (req, res, next) => {
   try {
@@ -64,7 +86,7 @@ exports.uploadImages = async (req, res, next) => {
 
     // 保护：一次最多传多少张
     if (files.length > 5) {
-      return res.status(400).json({ ok: false, error: 'Too many files (max 10)' })
+      return res.status(400).json({ ok: false, error: 'Too many files (max 5)' })
     }
 
     const items = []
@@ -114,3 +136,19 @@ exports.uploadImages = async (req, res, next) => {
   }
 }
 
+exports.deleteImage = async (req, res, next) => {
+  try {
+    const url = String(req.query.url || '').trim()
+
+    if (!url) {
+      return res.status(400).json({ ok: false, error: 'Missing url parameter' })
+    }
+
+    const key = keyFromUrl(url)
+    await deleteFromOSS(key)
+    return res.json({ ok: true })
+
+  } catch (error) {
+    return next(error)
+  }
+}
