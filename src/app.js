@@ -33,6 +33,7 @@ app.use(
           'data:',
           'blob:',
           'https://juxin-images-cn.oss-cn-hangzhou.aliyuncs.com',
+          'https://img.juxin-manufacturing.com',
         ],
       },
     },
