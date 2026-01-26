@@ -64,7 +64,7 @@ exports.uploadImages = async (req, res, next) => {
 
     // 保护：一次最多传多少张
     if (files.length > 5) {
-      return res.status(400).json({ ok: false, error: 'Too many files (max 10)' })
+      return res.status(400).json({ ok: false, error: 'Too many files (max 5)' })
     }
 
     const items = []
