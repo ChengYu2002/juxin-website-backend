@@ -212,38 +212,46 @@ const deleteProduct = async (req, res, next) => {
 }
 
 // admin：删除产品variant（⚠️ 使用业务 variant key）
-// DELETE /admin/products/:id/variants/:key (admin only)
+// DELETE /products/admin/:id/variants/:key
 const deleteProductVariant = async (req, res, next) => {
   try {
     const { id, key } = req.params
+    const keyNorm = String(key || '').trim().toLowerCase()
 
-    // ① 查 product
     const product = await Product.findOne({ id })
-    if (!product) {
-      return res.status(404).json({ ok: false, error: 'Product not found' })
+    if (!product) return res.status(404).json({ ok: false, error: 'Product not found' })
+
+    const variants = Array.isArray(product.variants) ? product.variants : []
+    const idx = variants.findIndex(
+      (v) => String(v.key || '').trim().toLowerCase() === keyNorm
+    )
+    if (idx === -1) return (res.status(404).json({ ok: false, error: 'Variant not found' }))
+
+    const variant = variants[idx]
+
+    // cleanup 统计给前端（可观测性更强）
+    let cleanup = { ok: 0, notFound: 0, skipped: 0, failed: 0 }
+
+    if (Array.isArray(variant.images) && variant.images.length > 0) {
+      try {
+        const r = await deleteBatchByUrls(variant.images)
+        cleanup = {
+          ok: r.ok?.length || 0,
+          notFound: r.notFound?.length || 0,
+          skipped: r.skipped?.length || 0,
+          failed: r.failed?.length || 0,
+        }
+        console.log('[deleteVariant] cleanup summary', { id, key: keyNorm, ...cleanup })
+      } catch (e) {
+        console.warn('[deleteVariant] deleteBatchByUrls failed', { id, key: keyNorm, msg: e?.message })
+      }
     }
 
-    // ② 找 variant
-    const idx = product.variants.findIndex(v => v.key === key)
-
-    if (idx === -1) { // 没找到
-      return res.status(404).json({ ok: false, error: 'Variant not found' })
-    }
-
-    const variant = product.variants[idx]
-
-    // ③ 批量删除 OSS 图片（群删 ⭐）
-    if (variant.images?.length > 0) {
-      await deleteBatchByUrls(variant.images)
-    }
-
-    // ④ 从数组移除
-    product.variants.splice(idx, 1)
-
-    // ⑤ 保存（触发 schema validator，包括你刚加的 unique 校验）
+    variants.splice(idx, 1)
+    product.variants = variants
     await product.save()
 
-    return res.json({ ok: true })
+    return res.json({ ok: true, cleanup })
   } catch (err) {
     next(err)
   }

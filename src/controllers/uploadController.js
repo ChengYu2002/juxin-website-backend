@@ -1,7 +1,7 @@
 // src/controllers/uploadController.js
 const crypto = require('crypto')
 const logger = require('../utils/logger')
-const { S3Client, PutObjectCommand, DeleteObjectCommand, DeleteObjectsCommand } = require('@aws-sdk/client-s3')
+const { S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3')
 
 const OSS_REGION = process.env.OSS_REGION || 'cn-hangzhou'
 const OSS_BUCKET = process.env.OSS_BUCKET
