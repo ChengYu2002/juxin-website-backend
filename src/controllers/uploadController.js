@@ -1,7 +1,7 @@
 // src/controllers/uploadController.js
 const crypto = require('crypto')
 const logger = require('../utils/logger')
-const { S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3')
+const { S3Client, PutObjectCommand, DeleteObjectCommand, DeleteObjectsCommand } = require('@aws-sdk/client-s3')
 
 const OSS_REGION = process.env.OSS_REGION || 'cn-hangzhou'
 const OSS_BUCKET = process.env.OSS_BUCKET
@@ -73,6 +73,56 @@ async function deleteFromOSS(key) {
     Bucket: OSS_BUCKET,
     Key: key,
   }))
+}
+
+// input: array of urls, 不是 req/res， 设计不在router掉用
+async function deleteBatchByUrls(urls = []) {
+  const results = { ok: [], notFound: [], failed: [], skipped: [] }
+
+  const keys = []
+  for (const raw of urls || []) {
+    const u = (raw && String(raw).trim()) || ''
+    if (!u) continue
+
+    try {
+      const key = keyFromUrl(u)
+      if (key) keys.push(key)
+      else results.failed.push({ url: u, code: 'BadUrl', msg: 'keyFromUrl returned empty' })
+    } catch (err) {
+      results.failed.push({
+        url: u,
+        code: err?.name || 'BadUrl',
+        msg: (err?.message && String(err.message)) || 'keyFromUrl threw',
+      })
+    }
+  }
+
+  const uniqueKeys = [...new Set(keys)]
+  if (uniqueKeys.length === 0) return results
+
+  for (const key of uniqueKeys) {
+    // ✅ 安全护栏：不允许删非 products/，但不要整批 throw
+    if (!key.startsWith('products/')) {
+      results.skipped.push({ key, reason: 'invalid prefix' })
+      continue
+    }
+
+    try {
+      await oss.send(new DeleteObjectCommand({ Bucket: OSS_BUCKET, Key: key }))
+      results.ok.push(key)
+    } catch (err) {
+      const code = err?.name || err?.Code || err?.code || ''
+      const msg = (err?.message && String(err.message)) || ''
+
+      const isNotFound =
+        code === 'NoSuchKey' || code === 'NotFound' || /NoSuchKey|NotFound|404/i.test(msg)
+
+      if (isNotFound) results.notFound.push(key)
+      else results.failed.push({ key, code, msg })
+    }
+  }
+
+  return results
 }
 
 
@@ -152,3 +202,7 @@ exports.deleteImage = async (req, res, next) => {
     return next(error)
   }
 }
+
+exports.deleteBatchByUrls = deleteBatchByUrls
+
+

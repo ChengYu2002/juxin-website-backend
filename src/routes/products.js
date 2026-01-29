@@ -11,6 +11,7 @@ productsRouter.get('/admin/:idorSlug', requireAdmin, productController.getAmdinP
 productsRouter.post('/admin', requireAdmin, productController.createProduct)
 productsRouter.put('/admin/:id', requireAdmin, productController.updateProduct)
 productsRouter.delete('/admin/:id', requireAdmin, productController.deleteProduct)
+productsRouter.delete('/admin/:id/variants/:key', requireAdmin, productController.deleteProductVariant)
 
 // ===== PUBLIC =====
 productsRouter.get('/', productController.getPublicProducts)

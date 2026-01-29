@@ -1,6 +1,7 @@
 // controllers/productController.js
 // 作用：处理 product 的业务逻辑：返回结果、数据操作、CRUD。
 const Product = require('../models/product')
+const { deleteBatchByUrls } = require('./uploadController')
 
 /**
  * =========================
@@ -170,18 +171,84 @@ const updateProduct = async (req, res, next) => {
 const deleteProduct = async (req, res, next) => {
   try {
     const { id } = req.params
-    const deleted = await Product.findOneAndDelete({ id })
 
-    if (!deleted) {
+    // ① 先查 product（不能直接 delete，不然图片 key 丢了）
+    const product = await Product.findOne({ id })
+
+    if (!product) {
       return res.status(404).json({ ok: false, error: 'Product not found' })
     }
 
-    res.status(204).end()
+    // set: 去重图片 URL
+    const urlSet = new Set()
+    for (const variant of product.variants || []) {
+      for (const imgUrl of variant.images || []) {
+        const u = (imgUrl && String(imgUrl).trim()) || ''
+        if (u) urlSet.add(u)
+      }
+    }
 
+    const urls = [...urlSet]
+
+
+    // ✅ OSS best-effort：失败不 throw
+    if (urls.length > 0) {
+      try {
+        await deleteBatchByUrls(urls)
+      } catch (err) {
+        // 这里不要 next(err)
+        // 只记录日志（用你自己的 logger）
+        console.warn('[deleteProduct] deleteBatchByUrls failed:', err?.message || err)
+      }
+    }
+
+    // ✅ 再删 DB
+    await product.deleteOne()
+
+    res.status(204).end()
   } catch (error) {
     next(error)
   }
 }
+
+// admin：删除产品variant（⚠️ 使用业务 variant key）
+// DELETE /admin/products/:id/variants/:key (admin only)
+const deleteProductVariant = async (req, res, next) => {
+  try {
+    const { id, key } = req.params
+
+    // ① 查 product
+    const product = await Product.findOne({ id })
+    if (!product) {
+      return res.status(404).json({ ok: false, error: 'Product not found' })
+    }
+
+    // ② 找 variant
+    const idx = product.variants.findIndex(v => v.key === key)
+
+    if (idx === -1) { // 没找到
+      return res.status(404).json({ ok: false, error: 'Variant not found' })
+    }
+
+    const variant = product.variants[idx]
+
+    // ③ 批量删除 OSS 图片（群删 ⭐）
+    if (variant.images?.length > 0) {
+      await deleteBatchByUrls(variant.images)
+    }
+
+    // ④ 从数组移除
+    product.variants.splice(idx, 1)
+
+    // ⑤ 保存（触发 schema validator，包括你刚加的 unique 校验）
+    await product.save()
+
+    return res.json({ ok: true })
+  } catch (err) {
+    next(err)
+  }
+}
+
 
 module.exports = {
   getPublicProducts,
@@ -190,5 +257,6 @@ module.exports = {
   getAmdinProductByIdorSlug,
   createProduct,
   updateProduct,
-  deleteProduct
+  deleteProduct,
+  deleteProductVariant,
 }
