@@ -11,7 +11,6 @@ const { deleteBatchByUrls } = require('./uploadController')
 
 // public：只返回上架产品
 // GET /api/products?category=shopping-trolley
-
 const getPublicProducts = async (req, res, next) => {
   try {
     const { category } = req.query
@@ -257,6 +256,40 @@ const deleteProductVariant = async (req, res, next) => {
   }
 }
 
+//
+const deleteVariantImage = async (req, res, next) => {
+
+  const productId = req.params.id
+  const variantKey = req.params.key
+
+  const url = String(req.query.url || '').trim()
+  if (!url) {
+    return res.status(400).json({ ok: false, error: 'Missing image URL' })
+  }
+
+  try {
+    // ✅ 1) DB：永远先删引用（幂等）: 无论variantKey存不存在，都尝试删图片引用
+    const r = await Product.updateOne(
+      { id: productId, 'variants.key': variantKey },
+      { $pull: { 'variants.$.images': url } }
+    )
+
+    // ✅ 2) OSS：best-effort 删除（不存在也算成功）
+    const del = await deleteBatchByUrls([url])
+
+    // ✅ 3) 返回 OK（不因为 OSS 不存在而失败）
+    return res.json({
+      ok: true,
+      db: { matched: r.matchedCount, modified: r.modifiedCount },
+      storage: del,
+    })
+
+  } catch (error) {
+    next(error)
+
+  }
+}
+
 
 module.exports = {
   getPublicProducts,
@@ -267,4 +300,5 @@ module.exports = {
   updateProduct,
   deleteProduct,
   deleteProductVariant,
+  deleteVariantImage,
 }
