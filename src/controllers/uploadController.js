@@ -13,6 +13,12 @@ logger.info('[upload] OSS_BUCKET=', JSON.stringify(OSS_BUCKET))
 logger.info('[upload] OSS_ENDPOINT=', JSON.stringify(OSS_ENDPOINT))
 logger.info('[upload] OSS_PUBLIC_BASE_URL=', JSON.stringify(OSS_PUBLIC_BASE_URL))
 
+// 安全护栏：只允许操作这些域名下的图片
+const ALLOWED_HOSTS = new Set([
+  'img.juxin-manufacturing.com',                     // CDN
+  'juxin-images-cn.oss-cn-hangzhou.aliyuncs.com',    // OSS
+])
+
 if (!OSS_BUCKET) {
   throw new Error('Missing env: OSS_BUCKET')
 }
@@ -55,9 +61,44 @@ function buildPublicUrl(key) {
 
 // 从公开 URL 解析出对象 key
 function keyFromUrl(imageUrl) {
-  const u = new URL(imageUrl)
-  return decodeURIComponent(u.pathname.replace(/^\/+/, ''))
+  console.log('keyFromUrl imageUrl=', imageUrl)
+  if (!imageUrl) {
+    const err = new Error('Empty url')
+    err.status = 400
+    throw err
+  }
+
+  let u
+
+  try {
+    u = new URL(imageUrl)
+  } catch {
+    const err = new Error('Invalid url')
+    err.status = 400
+    throw err
+  }
+
+  // ✅ ① 域名白名单检验（最关键）
+  if (!ALLOWED_HOSTS.has(u.hostname)) {
+    const err = new Error(`Forbidden host: ${u.hostname}`)
+    err.status = 400
+    throw err
+  }
+
+  // ✅ ② 取 pathname 作为 key（去掉开头的 /）
+  // 例如：/products/12345.jpg -> products/12345.jpg
+  let key = decodeURIComponent(u.pathname.replace(/^\/+/, ''))
+
+  // ✅ ③ 基础安全清洗（防奇怪路径）
+  if (!key || key.includes('..') || key.includes('\\')) {
+    const err = new Error('Invalid key')
+    err.status = 400
+    throw err
+  }
+
+  return key
 }
+
 
 async function deleteFromOSS(key) {
   if (!key) return
@@ -73,6 +114,56 @@ async function deleteFromOSS(key) {
     Bucket: OSS_BUCKET,
     Key: key,
   }))
+}
+
+// input: array of urls, 不是 req/res， 设计不在router掉用
+async function deleteBatchByUrls(urls = []) {
+  const results = { ok: [], notFound: [], failed: [], skipped: [] }
+
+  const keys = []
+  for (const raw of urls || []) {
+    const u = (raw && String(raw).trim()) || ''
+    if (!u) continue
+
+    try {
+      const key = keyFromUrl(u)
+      if (key) keys.push(key)
+      else results.failed.push({ url: u, code: 'BadUrl', msg: 'keyFromUrl returned empty' })
+    } catch (err) {
+      results.failed.push({
+        url: u,
+        code: err?.name || 'BadUrl',
+        msg: (err?.message && String(err.message)) || 'keyFromUrl threw',
+      })
+    }
+  }
+
+  const uniqueKeys = [...new Set(keys)]
+  if (uniqueKeys.length === 0) return results
+
+  for (const key of uniqueKeys) {
+    // ✅ 安全护栏：不允许删非 products/，但不要整批 throw
+    if (!key.startsWith('products/')) {
+      results.skipped.push({ key, reason: 'invalid prefix' })
+      continue
+    }
+
+    try {
+      await oss.send(new DeleteObjectCommand({ Bucket: OSS_BUCKET, Key: key }))
+      results.ok.push(key)
+    } catch (err) {
+      const code = err?.name || err?.Code || err?.code || ''
+      const msg = (err?.message && String(err.message)) || ''
+
+      const isNotFound =
+        code === 'NoSuchKey' || code === 'NotFound' || /NoSuchKey|NotFound|404/i.test(msg)
+
+      if (isNotFound) results.notFound.push(key)
+      else results.failed.push({ key, code, msg })
+    }
+  }
+
+  return results
 }
 
 
@@ -152,3 +243,7 @@ exports.deleteImage = async (req, res, next) => {
     return next(error)
   }
 }
+
+exports.deleteBatchByUrls = deleteBatchByUrls
+
+

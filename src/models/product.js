@@ -133,6 +133,12 @@ const productSchema = new mongoose.Schema(
   { timestamps: true } // 自动添加 createdAt 和 updatedAt 字段
 )
 
+// 自定义验证：确保 variants 数组中每个 variant 的 key 唯一
+productSchema.path('variants').validate(function (variants) {
+  const keys = variants.map(v => v.key)
+  return new Set(keys).size === keys.length
+}, 'Variant keys must be unique within a product')
+
 /**
  * 附加：列表页常用“主图”可由 variants[0].images[0] 推导
  * 不一定要存字段，避免重复数据。
