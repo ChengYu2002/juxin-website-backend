@@ -4,6 +4,13 @@ const logger = require('../utils/logger')
 
 const errorHandler = (error, req, res, _next) => {
   logger.error(error.message)
+  // ⭐⭐ 业务自定义错误优先
+  if (error.status) {
+    return res.status(error.status).json({
+      ok: false,
+      error: error.message,
+    })
+  }
 
   // MongoDB: 无效的 ObjectId 错误
   if (error.name === 'CastError') {

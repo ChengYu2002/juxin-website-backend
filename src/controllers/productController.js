@@ -256,9 +256,9 @@ const deleteProductVariant = async (req, res, next) => {
   }
 }
 
-//
+// admin：删除产品 variant 图片（⚠️ 使用业务 variant key）
+// DELETE /products/admin/:id/variants/:key/images?url=...
 const deleteVariantImage = async (req, res, next) => {
-
   const productId = req.params.id
   const variantKey = req.params.key
 
@@ -276,6 +276,20 @@ const deleteVariantImage = async (req, res, next) => {
 
     // ✅ 2) OSS：best-effort 删除（不存在也算成功）
     const del = await deleteBatchByUrls([url])
+
+    // 🔴 只对 BadUrl / Forbidden / Invalid key 这种输入错误报 400
+    // const hasClientError = del.failed?.some(x =>
+    //   x.code === 'BadUrl' ||
+    //   /Invalid url|Forbidden host|Invalid key/i.test(x.msg || '')
+    // )
+
+    // if (hasClientError) {
+    //   return res.status(400).json({
+    //     ok: false,
+    //     error: 'Invalid image url',
+    //     storage: del,
+    //   })
+    // }
 
     // ✅ 3) 返回 OK（不因为 OSS 不存在而失败）
     return res.json({

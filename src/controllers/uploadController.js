@@ -13,6 +13,12 @@ logger.info('[upload] OSS_BUCKET=', JSON.stringify(OSS_BUCKET))
 logger.info('[upload] OSS_ENDPOINT=', JSON.stringify(OSS_ENDPOINT))
 logger.info('[upload] OSS_PUBLIC_BASE_URL=', JSON.stringify(OSS_PUBLIC_BASE_URL))
 
+// 安全护栏：只允许操作这些域名下的图片
+const ALLOWED_HOSTS = new Set([
+  'img.juxin-manufacturing.com',                     // CDN
+  'juxin-images-cn.oss-cn-hangzhou.aliyuncs.com',    // OSS
+])
+
 if (!OSS_BUCKET) {
   throw new Error('Missing env: OSS_BUCKET')
 }
@@ -55,9 +61,44 @@ function buildPublicUrl(key) {
 
 // 从公开 URL 解析出对象 key
 function keyFromUrl(imageUrl) {
-  const u = new URL(imageUrl)
-  return decodeURIComponent(u.pathname.replace(/^\/+/, ''))
+  console.log('keyFromUrl imageUrl=', imageUrl)
+  if (!imageUrl) {
+    const err = new Error('Empty url')
+    err.status = 400
+    throw err
+  }
+  
+  let u
+
+  try {
+    u = new URL(imageUrl)
+  } catch {
+    const err = new Error('Invalid url')
+    err.status = 400
+    throw err
+  }
+
+  // ✅ ① 域名白名单检验（最关键）
+  if (!ALLOWED_HOSTS.has(u.hostname)) {
+    const err = new Error(`Forbidden host: ${u.hostname}`)
+    err.status = 400
+    throw err
+  }
+
+  // ✅ ② 取 pathname 作为 key（去掉开头的 /）
+  // 例如：/products/12345.jpg -> products/12345.jpg
+  let key = decodeURIComponent(u.pathname.replace(/^\/+/, ''))
+
+  // ✅ ③ 基础安全清洗（防奇怪路径）
+  if (!key || key.includes('..') || key.includes('\\')) {
+    const err = new Error('Invalid key')
+    err.status = 400
+    throw err
+  }
+
+  return key
 }
+
 
 async function deleteFromOSS(key) {
   if (!key) return
